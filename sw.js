@@ -48,15 +48,13 @@ async function handleRequest(request, url) {
 
   const target = PORTAL_ORIGIN + portalPath + url.search + url.hash;
 
+  // Plain fetch — no forwarded headers (would turn this into a preflighted
+  // request that static hosts like GH Pages don't answer with CORS headers).
+  // Portal is a public static site; nothing it serves needs custom request
+  // headers from the client.
   let upstream;
   try {
-    upstream = await fetch(target, {
-      method: request.method,
-      headers: request.headers,
-      body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.clone().blob(),
-      redirect: 'follow',
-      credentials: 'omit',
-    });
+    upstream = await fetch(target, { method: request.method, credentials: 'omit' });
   } catch (e) {
     return new Response('SW proxy error: ' + (e && e.message), { status: 502, headers: { 'Content-Type': 'text/plain' } });
   }
